@@ -1,17 +1,17 @@
 <?php
-	ini_set("log_errors", 1);
-	ini_set("error_log", "/home/yongqing/error_php.log");
+	//ini_set("log_errors", 1);
+	//ini_set("error_log", "/home/yongqing/error_php.log");
 	//step 1: use the gene position to find corresponding gene name in one species;
 	//step 2: then use the gene name to fine another species's gene name
 	//step 3: finally, merge the search result;
 	
 	// acquire the form information
-	$species    = $_POST["species"];
-	$position   = $_POST["geneName"];
+	$species = $_REQUEST["species"];
+	$position   = $_REQUEST["geneName"];
 	$chromosome = substr($position,0,strpos($position,":"));
 	$geneStart  = substr($position,strpos($position,":")+1,strpos($position,"-")-strpos($position,":")-1);
 	$geneEnd    = substr($position,strpos($position,"-")+1); 
- 	echo "$species  "."$chromosome:"."$geneStart--"."$geneEnd<br>";
+ 	//echo "$species  "."$chromosome:"."$geneStart--"."$geneEnd<br>";
 
 	// open the databases:human,mouse and pig gene databases
 	$host = "localhost";
@@ -21,13 +21,10 @@
 	if (!$mysqlcon) {
 		die('Could not connect:'.mysql_error());
 	}else {
-		echo "You Succeed con~<br>";
+		//echo "You Succeed con~<br>";
 	}
 	
-	$arrSpeciesDbInit=array("Human"=>"hg19","Mouse"=>"mm9","Pig"=>"susScr2");
-	//$speciesdb = array("hg19","mm9","susScr2");
-	//$speciescommonname = array("Human","Mouse","Pig");
-	//$speciesname = array("Homo sapiens","Mus musculus","Sus scrofa");
+	$arrSpeciesDbInit=array("hg19"=>"hg19","mm9"=>"mm9","susScr2"=>"susScr2");
 		
 	$arrSpeciesDb=array();// Other species need to query and it coressponding database name
     if(array_key_exists($species,$arrSpeciesDbInit)){
@@ -50,10 +47,10 @@
 			$str1 = "$arrSpeciesDbInit[$species]".": chrom:$row1[chrom] chromStart:$row1[chromStart] chromEnd:$row1[chromEnd] name:$row1[name]:$row1[strand]<br/>";
 			echo $str1;
 			// The fourth dimension of the array
-			$arr_4=array("chr"     => $row1[chrom],
-						"start" => $row1[chromStart],
-						"end"   => $row1[chromEnd],
-						"strand"     => $row1[strand]
+			$arr_4=array("chr"     => $row1['chrom'],
+						"start" => $row1['chromStart'],
+						"end"   => $row1['chromEnd'],
+						"strand"     => $row1['strand']
 			            );
 			// The gene name exists, num++
 			if(array_key_exists($genename,$arr_1)){
@@ -81,12 +78,12 @@
 				$result_spe2 = mysql_query($sql2,$mysqlcon);
 				if(mysql_num_rows($result_spe2)){
 					while($row2 = mysql_fetch_array($result_spe2)){
-						$str2 = "$dbname: chrom:$row2[chrom] chromStart:$row2[chromStart] chromEnd:$row2[chromEnd] name:$row2[name]:$row2[strand]<br/>";
+						$str2 = "$dbname: $row2[chrom]:$row2[chromStart]--$row2[chromEnd]<br/>";
 						echo $str2;	
-						$arr_4=array("chr"     => $row2[chrom],
-									"start" => $row2[chromStart],
-									"end"   => $row2[chromEnd],
-									"strand"     => $row2[strand]
+						$arr_4=array("chr"     => $row2['chrom'],
+									"start" => $row2['chromStart'],
+									"end"   => $row2['chromEnd'],
+									"strand"     => $row2['strand']
 									);
 						if(array_key_exists($speci,$arr_1[$genename])){// The species information has existed, need to consider NUM++ in the third dimension array
 							$arr_3_key = array_keys($arr_1[$genename][$speci]);
@@ -107,16 +104,15 @@
 						$arr_1[$genename]=array_merge($arr_1[$genename],$arr_2);// Merge
 					}
 				}else{
-					echo "$dbname: Not found $genename <br/>";
+					//echo "$dbname: Not found $genename <br/>";
 				}
 			}
-		echo "<br/>";
+		//echo "<br/>";
 		}
 		
 	}else{
-		echo "Not found any gene~";
+		//echo "Not found any gene~";
 	}
-	//print_r($arr_1);
 	
 /*
 Array ( 
@@ -155,7 +151,7 @@ Array (
 			foreach($arrTmp_2 as $speName => $arrTmp_3){// Merge the result according to the each species
 				if(array_key_exists($speName,$result[$geneName])){// The species exist, such as "human"
 					foreach($arrTmp_3 as $num => $arrTmp_4){// Merge the result according to the "Num"
-						if(array_key_exists($num,$rest[$geneName][$speName])){//it's "num" exist, such as "num_1"
+						if(array_key_exists($num,$result[$geneName][$speName])){//it's "num" exist, such as "num_1"
 							if($result[$geneName][$speName][$num]["chr"] == $arrTmp_4["chr"]){// How to deal with the different "chr". The "chr" must equal so can merge
 								$old_start = $result[$geneName][$speName][$num]["start"] + 0;
 								$old_end   = $result[$geneName][$speName][$num]["end"] + 0;
@@ -183,12 +179,9 @@ Array (
 		}
 	}
 	
-	
-
-	
 	//echo "<br/>-------------------------------------------<br/>";
 	//print_r($result);  // Output the last result
-	echo "<br>Finally result<br/>=============================================<br/>";
+/*	echo "<br>Finally result<br/>=============================================<br/>";
 	foreach ($result as $gname => $onearr){
 		echo "$gname<br/>";
 		foreach ($onearr as $spec => $num_info){
@@ -199,7 +192,7 @@ Array (
 		}
 		echo "=============================================<br/>";
 	}
-	
+*/	
 	mysql_close($mysqlcon);
-	echo "<br>Test End<br/><br/>";
+	//echo "<br>Test End<br/><br/>";
 ?> 

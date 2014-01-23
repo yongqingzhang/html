@@ -4,6 +4,7 @@
 		// new page, doesn't do anything
 	} else {
 		require("../../includes/db/opendbcpb.php");
+		$directsubmit = false;
 		$spcinfo = array();
 		$spcflag = array();
 		$spcmultiflag = array();
@@ -30,10 +31,7 @@
 				$isError = true;
 				echo "<p class=\"formstyle\"> Please specify the species of the coordinates. </p>";
 			} else {
-				// ***** Please use require to include the region code *****
-				// ***** Then remove this line
-				$isError = true;
-				echo "<p class=\"formstyle\"> Support for coordinates is currently under development and will be published within the next update. </p>";
+				require('querygenelist2.php');
 			}
 		} else if(!isset($_REQUEST["species"]) || $_REQUEST["species"] == "gene") {
 			require('querygenelist.php');
