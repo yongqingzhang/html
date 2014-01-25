@@ -30,7 +30,8 @@
 		//echo "You Succeed con~<br>";
 	}
 	
-	$arrSpeciesDbInit=array("hg19"=>"hg19","mm9"=>"mm9","susScr2"=>"susScr2");	//This use to the CEpBrowser php
+	//$arrSpeciesDbInit=array("hg19"=>"hg19","mm9"=>"mm9","susScr2"=>"susScr2");	//This use to the CEpBrowser php
+	$arrSpeciesDbInit=array("Human"=>"hg19","Mouse"=>"mm9","Pig"=>"susScr2");
 		
 	$arrSpeciesDb=array();// Other species need to query and it coressponding database name
     if(array_key_exists($species,$arrSpeciesDbInit)){
@@ -42,13 +43,11 @@
 	
 	//traverse three species to find gene name
 	$sql1="select * from $arrSpeciesDbInit[$species].multishade where chrom='$chromosome' AND chromStart>='$geneStart' AND chromEnd<='$geneEnd'";
-	$result = mysql_query($sql1,$mysqlcon);
-	
-	$region=array();
+	$result1 = mysql_query($sql1,$mysqlcon);
 	
 	$arr_1=array();// Keep the finish result, it also means the first dimension of the array
-	if(mysql_num_rows($result)) {
-		while($row1 = mysql_fetch_array($result)) {
+	if(mysql_num_rows($result1)) {
+		while($row1 = mysql_fetch_array($result1)) {
 			$genename = $row1[name];
 			$str1 = "$arrSpeciesDbInit[$species] $row1[chrom]:$row1[chromStart]--$row1[chromEnd] $row1[strand] $row1[name]<br/>";
 			echo $str1;
@@ -110,14 +109,14 @@
 						$arr_1[$genename]=array_merge($arr_1[$genename],$arr_2);// Merge
 					}
 				}else{
-					//echo "$dbname: Not found $genename <br/>";
+					echo "$dbname: Not found $genename <br/>";
 				}
 			}
-		//echo "<br/>";
+		echo "<br/>";
 		}
 		
 	}else{
-		//echo "Not found any gene~";
+		echo "Not found any gene~";
 	}
 	
 /*
@@ -125,7 +124,6 @@ Array (
 	[OR4F17_0] => Array ( 
 		[Human] => Array ( 
 			[NUM_1] => Array ( [chrom] => chr1 [chromStart] => 56703 [chromEnd] => 59682 [strand] => + ) 
-			[NUM_2] => Array ( [chrom] => chr1 [chromStart] => 11111 [chromEnd] => 22222 [strand] => + ) 
 		) 
 		[Mouse] => Array ( 
 			[NUM_1] => Array ( [chrom] => chr2 [chromStart] => 111313507 [chromEnd] => 111315657 [strand] => + ) 
@@ -145,46 +143,75 @@ Array (
 			[NUM_1] => Array ( [chrom] => chr7 [chromStart] => 134565397 [chromEnd] => 134566510 [strand] => - ) 
 		) 
 	) 
+	[OR4F37_1] => Array ( 
+		[Human] => Array ( 
+			[NUM_1] => Array ( [chrom] => chr1 [chromStart] => 59682 [chromEnd] => 61179 [strand] => + ) 
+		) 
+		[Mouse] => Array ( 
+			[NUM_1] => Array ( [chrom] => chr2 [chromStart] => 111315843 [chromEnd] => 111317276 [strand] => + ) 
+		) 
+		[Pig] => Array ( 
+			[NUM_1] => Array ( [chrom] => chr7 [chromStart] => 134565397 [chromEnd] => 134566510 [strand] => - ) 
+		) 
+	)
 ) 
 */
 	
-	//merge the gene region according to the same gene
-	// Don't consider "strand" value, according to the end_arr of the first insert
-	$result=array();		
-	foreach($arr_1 as $gName => $arrTmp_2){
-		$geneName = substr($gName,0,strpos($gName,'_'));
-		if(array_key_exists($geneName,$result)){// The gene exist, such as "OR4F17"
-			foreach($arrTmp_2 as $speName => $arrTmp_3){// Merge the result according to the each species
-				if(array_key_exists($speName,$result[$geneName])){// The species exist, such as "human"
-					foreach($arrTmp_3 as $num => $arrTmp_4){// Merge the result according to the "Num"
-						if(array_key_exists($num,$result[$geneName][$speName])){//it's "num" exist, such as "num_1"
-							if($result[$geneName][$speName][$num]["chr"] == $arrTmp_4["chr"]){// How to deal with the different "chr". The "chr" must equal so can merge
-								$old_start = $result[$geneName][$speName][$num]["start"] + 0;
-								$old_end   = $result[$geneName][$speName][$num]["end"] + 0;
-								$now_start = $arrTmp_4["start"]+ 0;
-								$now_end   = $arrTmp_4["end"]+ 0;
-								// Update the "start" and "end"
-								if($now_start < $old_start){
-									$result[$geneName][$speName][$num]["start"] = $now_start;
-								}
-								if($now_end > $old_end){
-									$result[$geneName][$speName][$num]["end"] = $now_end;
-								}
-							}
-						}else{
-							$result[$geneName][$speName][$num] = $arrTmp_4;
-						}
-					}
+	//merge the gene region according to the same gene//
+	
+	// Revise the array Key, from gene name to region name
+	$temp = array();
+	$regionNum = 1;
+	foreach($arr_1 as $gName=>$arrTmp_2){
+		$gName = "region_"."$regionNum";
+		$temp[$gName] = $arrTmp_2;
+		$regionNum++;
+	}
+	print_r($temp);
+	
+	$result = array();
+	$regionNum = 1;
+	foreach($temp as $geneRegion3 =>$arrTmp_3){
+		echo $regionName = "region".$regionNum."<br/>";
+		
+		if(strcmp($result[$regionName]['hg19']['0']['chr'],"") != 0){
+			if(strcmp($temp[$geneRegion3]['mm9']['0']['chr'],"") != 0 && strcmp($result[$regionName]['mm9']['0']['strand'],$temp[$geneRegion3]['mm9']['0']['strand']) == 0 && strcmp($result[$regionName]['mm9']['0']['chr'],$temp[$geneRegion3]['mm9']['0']['chr']) == 0){
+				$chro1 = $result[$regionName]['mm9']['0']['chr'];
+				$Start_1 = $result[$regionName]['mm9']['0']['start'];
+				$End_1 = $result[$regionName]['mm9']['0']['end'];
+				$Start_2 = $temp[$geneRegion3]['mm9']['0']['start'];
+				$End_2  = $temp[$geneRegion3]['mm9']['0']['end'];
+				$newStart = $End_1;
+				$newEnd = $Start_2;
+				
+				$sql3="select * from mm9.multishade where chrom='$chro1' AND chromStart>='$newStart' AND chromEnd<='$newEnd'";
+				$result3 = mysql_query($sql3,$mysqlcon);
+				echo mysql_num_rows($result3)."<br/>";
+
+				if(mysql_num_rows($result3) > 0){
+					echo "Regionada<br/>";
+					echo $regionNum++;
+					$regionName = "region".$regionNum;
+					echo $regionName."111111111111111111111111111<br/>";
+					$result[$regionName] = $arrTmp_3;
+				
 				}else{
-					$result[$geneName][$speName] = $arrTmp_3;
+					echo $result[$regionName]['hg19']['0']['start']."<br/>";
+					$result[$regionName]['hg19']['0']['end'] = $temp[$geneRegion3]['hg19']['0']['end'];
+					$result[$regionName]['mm9']['0']['end'] = $temp[$geneRegion3]['mm9']['0']['end'];
+					$result[$regionName]['susScr2']['0']['end']=$temp[$geneRegion3]['susScr2']['0']['end'];
 				}
+			}else{
+				$regionNum++;
+				$regionName = "region".$regionNum;
+				$result[$regionName] = $arrTmp_3;
 			}
-			
 		}else{
-			$result[$geneName] = $arrTmp_2;
+			echo "ab<br/>";
+			$result[$regionName] = $arrTmp_3;
 		}
 	}
-/*
+
 	//echo "<br/>-------------------------------------------<br/>";
 	//print_r($result);  // Output the last result
 	echo "<br>Finally result<br/>=============================================<br/>";
@@ -198,7 +225,7 @@ Array (
 		}
 		echo "=============================================<br/>";
 	}
-*/	
+
 	mysql_close($mysqlcon);
 	//echo "<br>Test End<br/><br/>";
 ?> 

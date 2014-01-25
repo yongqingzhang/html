@@ -31,7 +31,7 @@
 				$isError = true;
 				echo "<p class=\"formstyle\"> Please specify the species of the coordinates. </p>";
 			} else {
-				require('querygenelist2.php');
+				require('querygenelist3.php');
 			}
 		} else if(!isset($_REQUEST["species"]) || $_REQUEST["species"] == "gene") {
 			require('querygenelist.php');
